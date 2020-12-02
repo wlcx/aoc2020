@@ -3,7 +3,7 @@ use std::fs::File;
 use std::io::{BufReader, prelude::*};
 
 fn main() {
-    let fname = env::args().skip(1).next().unwrap();
+    let fname = env::args().skip(1).next().expect("Please provide path to input file!");
     let file = BufReader::new(File::open(fname).unwrap());
     let input: Vec<i32> = file.lines().map(|val| i32::from_str_radix(&val.unwrap(), 10).unwrap()).collect();
     for x in 0..input.len() {
@@ -12,7 +12,6 @@ fn main() {
                 println!("part 1: {}", input[x] * input[y]);
             }
             for z in y+1..input.len() {
-                // let's be obnoxious
                 if input[x] + input[y] + input[z] == 2020 {
                     println!("part 2: {}", input[x]*input[y]*input[z])
                 }
