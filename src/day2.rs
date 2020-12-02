@@ -1,3 +1,4 @@
+use itertools::Itertools;
 use std::env;
 use std::fs::File;
 use std::io::{prelude::*, BufReader};
@@ -22,9 +23,14 @@ fn parse_line(line: String) -> Line {
     )
 }
 
-fn validate_line(line: Line) -> bool {
+fn validate_line_part1(line: Line) -> bool {
     let range = line.0..=line.1; // Inclusive range!
     range.contains(&(line.3.chars().filter(|c| *c == line.2).count() as u8))
+}
+
+fn validate_line_part2(line: Line) -> bool {
+    let chars = line.3.chars().collect::<Vec<char>>();
+    (chars[(line.0 - 1) as usize] == line.2) ^ (chars[(line.1 - 1) as usize] == line.2)
 }
 
 fn main() {
@@ -33,12 +39,18 @@ fn main() {
         .next()
         .expect("Please provide path to input file!");
     let file = BufReader::new(File::open(fname).unwrap());
-    let valid_count = file
-        .lines()
-        .map(Result::unwrap)
-        .map(parse_line)
-        .map(validate_line)
-        .filter(|x| *x)
+    // split the file into lines, parse each line, then split into a tee for the two
+    // parts of the puzzle
+    let (part1, part2) = file.lines().map(Result::unwrap).map(parse_line).tee();
+
+    let part1_valid_count = part1
+        .map(validate_line_part1)
+        .filter(|valid| *valid)
         .count();
-    println!("Valid count: {}", valid_count)
+    let part2_valid_count = part2
+        .map(validate_line_part2)
+        .filter(|valid| *valid)
+        .count();
+    println!("Part 1: {} valid", part1_valid_count);
+    println!("Part 2: {} valid", part2_valid_count);
 }
