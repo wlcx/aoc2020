@@ -2,22 +2,21 @@ use std::env;
 use std::fs::File;
 use std::io::{prelude::*, BufReader};
 
-struct Direction(i8, i8);
+struct Direction(usize, usize);
 
 fn calculate<I>(lines: I, direction: Direction) -> usize
 where
     I: Iterator<Item = String>,
 {
     lines
-        .step_by(direction.1 as usize) // Step every n lines, where n is our "down" step
+        .step_by(direction.1) // Step every n lines, where n is our "down" step
         // Zip with our "x position" - an iterator starting at 0 and skipping our
-        //"right" step each time
-        .zip((0..).step_by(direction.0 as usize))
+        // "right" step each time
+        .zip((0..).step_by(direction.0))
         // Each line repeats infinitely to the right - represent this as a cycling
         // iterator over the chars in the line. Skip along our x position and return
         // whether we collided or not.
-        .map(|(line, x)| line.chars().cycle().skip(x).next().unwrap() == '#')
-        .filter(|collision| *collision) // Filter for lines we collided in
+        .filter(|(line, x)| line.chars().cycle().skip(*x).next().unwrap() == '#')
         .count() // return a count of how many collisions there were
 }
 fn main() {
