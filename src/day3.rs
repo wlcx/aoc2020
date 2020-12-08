@@ -33,7 +33,7 @@ fn main() {
         .collect::<Vec<String>>();
 
     let collision_product = [(1, 1), (3, 1), (5, 1), (7, 1), (1, 2)]
-        .into_iter()
+        .iter()
         .map(|dir| calculate(lines.clone().into_iter(), Direction(dir.0, dir.1)))
         .product::<usize>();
     println!("Collision product: {}", collision_product);
