@@ -20,7 +20,12 @@ path = "src/day3.rs"
 name = "day4"
 path = "src/day4.rs"
 
+[[bin]]
+name = "day8"
+path = "src/day8.rs"
+
 [dependencies]
 itertools = "*"
 regex = "1"
 lazy_static = "1.4.0"
+nom = "6"
