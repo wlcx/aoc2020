@@ -12,11 +12,11 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::str::FromStr;
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 enum Op {
     Acc(i16),
     Jmp(i16),
-    Nop,
+    Nop(i16),
 }
 
 impl TryFrom<(&str, i16)> for Op {
@@ -25,7 +25,7 @@ impl TryFrom<(&str, i16)> for Op {
         match i.0 {
             "acc" => Ok(Op::Acc(i.1)),
             "jmp" => Ok(Op::Jmp(i.1)),
-            "nop" => Ok(Op::Nop),
+            "nop" => Ok(Op::Nop(i.1)),
             s => Err(format!("Unknown opcode '{}'!", s)),
         }
     }
@@ -47,6 +47,57 @@ fn program(input: &str) -> IResult<&str, Vec<Op>> {
     all_consuming(terminated(separated_list1(newline, op), newline))(input)
 }
 
+fn exec(prog: &Vec<Op>) -> Result<i16, String> {
+    let mut pc: i16 = 0; // Program counter
+    let mut acc: i16 = 0; // Accumulator
+    let mut seen: HashSet<i16> = HashSet::new();
+    loop {
+        if seen.contains(&pc) {
+            return Err(format!(
+                "About to run instruction twice. Acc: {}, PC: {}",
+                acc, pc
+            ));
+        }
+        if pc == prog.len() as i16 {
+            println!("Program terminated correctly. Acc: {}, PC: {}", acc, pc);
+            return Ok(acc);
+        }
+        if pc >= prog.len().try_into().unwrap() {
+            return Err(format!("PC overflow: {}", pc));
+        }
+        seen.insert(pc);
+        match prog[usize::try_from(pc).unwrap()] {
+            Op::Acc(n) => {
+                acc += n;
+                pc += 1;
+            }
+            Op::Jmp(n) => {
+                pc += n;
+                if pc < 0 {
+                    return Err(format!("PC underflow - {} += {}", pc, n));
+                }
+            }
+            Op::Nop(_) => pc += 1,
+        }
+    }
+}
+
+fn mutate(prog: &Vec<Op>) {
+    for (i, o) in prog.iter().enumerate() {
+        let mut mutated_prog = prog.to_vec();
+
+        mutated_prog[i] = match o {
+            Op::Acc(n) => Op::Acc(*n),
+            Op::Jmp(n) => Op::Nop(*n),
+            Op::Nop(n) => Op::Jmp(*n),
+        };
+        match exec(&mutated_prog) {
+            Ok(n) => println!("Fixed program by mutating instruction {}. Acc: {}", i, n),
+            Err(_) => {}
+        }
+    }
+}
+
 fn main() {
     let fname = env::args()
         .skip(1)
@@ -60,24 +111,8 @@ fn main() {
     let (_, prog) = program(&input).unwrap();
 
     // Let's run the program
-    let mut pc = 0; // Program counter
-    let mut acc = 0; // Accumulator
-    let mut seen: HashSet<i16> = HashSet::new();
-    loop {
-        if seen.contains(&pc) {
-            println!("About to run instruction twice. Acc: {}, PC: {}", acc, pc);
-            return;
-        }
-        seen.insert(pc);
-        match prog[pc as usize] {
-            Op::Acc(n) => {
-                acc += n;
-                pc += 1;
-            }
-            Op::Jmp(n) => pc += n,
-            Op::Nop => pc += 1,
-        }
-    }
+    println!("{}", exec(&prog).unwrap_err());
+    mutate(&prog);
 }
 
 #[cfg(test)]
@@ -88,6 +123,6 @@ mod tests {
     fn test_op() {
         assert_eq!(op("acc +69"), Ok(("", Op::Acc(69))));
         assert_eq!(op("jmp -257"), Ok(("", Op::Jmp(-257))));
-        assert_eq!(op("nop -123"), Ok(("", Op::Nop)));
+        assert_eq!(op("nop -123"), Ok(("", Op::Nop(-123))));
     }
 }
