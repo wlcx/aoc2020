@@ -19,6 +19,7 @@ where
         .filter(|(line, x)| line.chars().cycle().skip(*x).next().unwrap() == '#')
         .count() // return a count of how many collisions there were
 }
+
 fn main() {
     // The usual - open a file from the 1st cli argument
     let fname = env::args()
