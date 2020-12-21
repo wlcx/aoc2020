@@ -13,6 +13,7 @@ dependencies = [
 name = "aoc2020"
 version = "0.1.0"
 dependencies = [
+ "bitvec",
  "itertools",
  "lazy_static",
  "nom",
