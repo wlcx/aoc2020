@@ -7,6 +7,7 @@ use nom::IResult;
 use std::collections::{HashMap, HashSet};
 use std::env;
 use std::fs;
+use std::iter::FromIterator;
 
 type BaggageRule<'a> = (&'a str, Vec<(u8, &'a str)>);
 type BaggageRules<'a> = Vec<BaggageRule<'a>>;
@@ -79,6 +80,15 @@ fn get_all_outer<'a>(target: &'a str, outer_map: &'a HashMap<&str, Vec<&str>>) -
     all_outers
 }
 
+fn get_total_contained<'a>(specifier: &str, rules: &'a HashMap<&str, Vec<(u8, &str)>>) -> u32 {
+    rules
+        .get(specifier)
+        .unwrap()
+        .iter()
+        .map(|(count, specifier)| *count as u32 * (1 + get_total_contained(specifier, rules)))
+        .sum()
+}
+
 fn main() {
     let fname = env::args()
         .skip(1)
@@ -89,6 +99,11 @@ fn main() {
     let map = outer_bag_map(&rules);
     let outers = get_all_outer("shiny gold", &map);
     println!("{} possible outers", outers.len());
+
+    println!(
+        "Shiny gold contains {} total.",
+        get_total_contained("shiny gold", &HashMap::from_iter(rules))
+    );
 }
 
 #[cfg(test)]
@@ -157,6 +172,15 @@ dotted black bags contain no other bags.
                 .iter()
                 .cloned()
                 .collect(),
+        );
+    }
+
+    #[test]
+    fn test_get_total_contained() {
+        let parsed = parse_baggage_rules(&input).unwrap().1;
+        assert_eq!(
+            get_total_contained("shiny gold", &HashMap::from_iter(parsed)),
+            32
         );
     }
 }
